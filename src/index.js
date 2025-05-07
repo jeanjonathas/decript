@@ -2,6 +2,7 @@ const express = require('express');
 const cors = require('cors');
 const dotenv = require('dotenv');
 const decryptRoutes = require('./routes/decrypt');
+const downloadRoutes = require('./routes/download');
 
 // Carregar variáveis de ambiente
 dotenv.config();
@@ -15,6 +16,7 @@ app.use(express.json());
 
 // Rotas
 app.use('/', decryptRoutes);
+app.use('/', downloadRoutes);
 
 // Rota básica para verificar se o serviço está funcionando
 app.get('/health', (req, res) => {

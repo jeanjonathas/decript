@@ -163,7 +163,7 @@ router.post('/decrypt-media', apiKeyAuth, async (req, res) => {
           })(),
           downloadUrl: `https://${req.get('host')}/download/${ // Usar o mesmo ID gerado acima
             Object.keys(global.downloadCache).pop() // Pega o último ID adicionado ao cache
-          }?apiKey=${process.env.API_KEY || req.headers['x-api-key'] || req.query.apiKey}`
+          }`
         });
       }
 

@@ -4,13 +4,14 @@ Microserviço para descriptografar arquivos de mídia criptografados do WhatsApp
 
 ## Funcionalidades
 
-- Descriptografa arquivos de áudio do WhatsApp
+- Descriptografa arquivos de mídia do WhatsApp (audio, imagem, vídeo, documento)
 - Implementa o padrão de criptografia do WhatsApp Web:
   - Derivação de chave com HKDF-SHA256
   - Descriptografia com AES-CBC
   - Verificação com HMAC-SHA256
-- Expõe um endpoint REST para descriptografia
-- Executa em contêiner Docker
+- Expõe endpoints REST para descriptografia
+- Fornece URLs de download direto válidas por 24 horas
+- Executa em contêiner Docker com Traefik
 
 ## Requisitos
 
@@ -19,12 +20,12 @@ Microserviço para descriptografar arquivos de mídia criptografados do WhatsApp
 
 ## Instalação e Execução
 
-### Usando Docker Compose com Traefik (Produção)
+### Usando Docker Swarm com Portainer (Produção)
 
-1. Clone este repositório:
+1. Clone este repositório ou baixe o arquivo `docker-compose.yml`:
    ```bash
-   git clone [url-do-repositorio]
-   cd [nome-do-repositorio]
+   git clone https://github.com/jeanjonathas/whatsdecrypt.git
+   cd whatsdecrypt
    ```
 
 2. Certifique-se de que as redes Traefik já estão configuradas no seu servidor:
@@ -35,16 +36,23 @@ Microserviço para descriptografar arquivos de mídia criptografados do WhatsApp
 
 3. Se as redes não existirem, crie-as:
    ```bash
-   docker network create traefik_public
-   docker network create app_network
+   docker network create traefik_public --driver overlay
+   docker network create app_network --driver overlay
    ```
 
-4. Inicie o serviço com Docker Compose:
+4. Implante o serviço no Docker Swarm:
    ```bash
-   docker-compose up -d
+   docker stack deploy -c docker-compose.yml whatsdecrypt
    ```
 
-5. O serviço estará disponível em `https://base64.supervet.app`
+5. Ou implante usando o Portainer:
+   - Acesse seu Portainer
+   - Vá para Stacks > Add stack
+   - Dê um nome ao stack (ex: whatsdecrypt)
+   - Cole o conteúdo do arquivo docker-compose.yml
+   - Clique em Deploy the stack
+
+6. O serviço estará disponível em `https://base64.supervet.app`
 
 ### Usando Docker Compose (Desenvolvimento Local)
 
@@ -133,7 +141,7 @@ Mantido por compatibilidade, redireciona para `/decrypt-media`.
 
 #### 1. Resposta em Base64 (Padrão)
 
-Retorna um objeto JSON com o conteúdo em base64:
+Retorna um objeto JSON com o conteúdo em base64 e uma URL para download direto:
 
 ```json
 {
@@ -142,13 +150,21 @@ Retorna um objeto JSON com o conteúdo em base64:
   "mimeType": "tipo MIME do arquivo",
   "size": 12345,
   "messageId": "ID da mensagem (se fornecido)",
-  "downloadUrl": "URL para download direto"
+  "downloadId": "ID único para download",
+  "downloadUrl": "URL para download direto válida por 24 horas"
 }
 ```
 
 #### 2. Download Direto
 
 Adicione `?download=true` à URL para baixar o arquivo diretamente, sem conversão para base64.
+
+#### 3. URL de Download
+
+A resposta inclui uma `downloadUrl` que permite baixar o arquivo descriptografado diretamente com um simples clique. Esta URL:
+- É válida por 24 horas
+- Não requer autenticação adicional
+- Inicia o download automaticamente quando acessada
 
 ### Resposta de Erro:
 
@@ -178,8 +194,9 @@ curl -X POST https://base64.supervet.app/decrypt-media \
   }'
 
 # Download direto do arquivo
-curl -X POST "https://base64.supervet.app/decrypt-media?download=true&apiKey=Je@nfree2525" \
+curl -X POST "https://base64.supervet.app/decrypt-media?download=true" \
   -H "Content-Type: application/json" \
+  -H "X-API-Key: Je@nfree2525" \
   -d @dados.json \
   --output audio.ogg
 ```
@@ -218,7 +235,30 @@ async function decryptMedia() {
   }
 }
 
-// Download direto do arquivo
+// Usar a URL de download fornecida na resposta
+async function decryptAndGetDownloadUrl() {
+  const response = await fetch('https://base64.supervet.app/decrypt-media', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'X-API-Key': 'Je@nfree2525'
+    },
+    body: JSON.stringify(data)
+  });
+  
+  const result = await response.json();
+  if (result.success) {
+    // Redirecionar para a URL de download ou criar um link
+    window.location.href = result.downloadUrl;
+    // Ou retornar a URL para uso posterior
+    return result.downloadUrl;
+  } else {
+    console.error(`Erro: ${result.error} - ${result.message}`);
+    return null;
+  }
+}
+
+// Alternativa: download direto do arquivo
 async function downloadMedia() {
   const response = await fetch('https://base64.supervet.app/decrypt-media?download=true', {
     method: 'POST',
@@ -299,22 +339,107 @@ if ($httpCode === 200) {
   echo "Erro HTTP: {$httpCode}\n";
 }
 ?>
+
+## Configuração do Docker Compose para Swarm
+
+O arquivo `docker-compose.yml` está configurado para funcionar com Docker Swarm e Traefik:
+
+```yaml
+version: "3.8"
+
+services:
+  whatsdecrypt:
+    image: node:18-alpine
+    command: >
+      sh -c "
+      echo 'Iniciando configuração do WhatsDecrypt...' &&
+      apk add --no-cache git &&
+      echo 'Verificando diretório /app...' &&
+      if [ -d '/app/.git' ]; then
+        echo 'Repositório já existe, atualizando...' &&
+        cd /app &&
+        git reset --hard &&
+        git pull;
+      else
+        echo 'Limpando diretório /app...' &&
+        rm -rf /app/* /app/.* 2>/dev/null || true &&
+        echo 'Clonando repositório...' &&
+        git clone https://github.com/jeanjonathas/whatsdecrypt.git /tmp/whatsdecrypt &&
+        cp -r /tmp/whatsdecrypt/* /app/ &&
+        cp -r /tmp/whatsdecrypt/.* /app/ 2>/dev/null || true &&
+        rm -rf /tmp/whatsdecrypt;
+      fi &&
+      cd /app &&
+      echo 'Instalando dependências Node.js...' &&
+      npm install --no-fund --no-audit &&
+      echo 'Iniciando servidor...' &&
+      NODE_ENV=production node src/index.js"
+    environment:
+      - NODE_ENV=production
+      - PORT=3000
+      - API_KEY=Je@nfree2525
+    volumes:
+      - whatsdecrypt_data:/app
+    networks:
+      - traefik_public
+      - app_network
+    deploy:
+      mode: replicated
+      replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.whatsdecrypt.rule=Host(`base64.supervet.app`)
+        - traefik.http.routers.whatsdecrypt.entrypoints=websecure
+        - traefik.http.routers.whatsdecrypt.tls=true
+        - traefik.http.routers.whatsdecrypt.tls.certresolver=le
+        - traefik.http.services.whatsdecrypt.loadbalancer.server.port=3000
+        - traefik.http.services.whatsdecrypt.loadbalancer.passHostHeader=true
+        - traefik.http.routers.whatsdecrypt.service=whatsdecrypt
+      resources:
+        limits:
+          cpus: "0.2"
+          memory: 128M
+
+volumes:
+  whatsdecrypt_data:
+    name: whatsdecrypt_data
+
+networks:
+  traefik_public:
+    external: true
+  app_network:
+    external: true
 ```
 
 ## Verificação de Saúde
 
-O serviço expõe um endpoint `/health` para verificar se está funcionando corretamente:
-
-```bash
-curl http://localhost:3000/health
-```
+O serviço fornece um endpoint `/health` para verificação de saúde, que retorna um status 200 OK se o serviço estiver funcionando corretamente.
 
 ## Segurança
 
-Este microserviço foi projetado para ser leve e seguro:
-- Não utiliza bibliotecas externas desnecessárias
-- Implementa verificações de integridade dos arquivos
-- Valida todos os parâmetros de entrada
+O serviço implementa autenticação via API key para proteger contra uso não autorizado. Certifique-se de manter sua API key segura.
+
+## Atualizações
+
+Para atualizar o serviço quando houver mudanças no repositório GitHub:
+
+```bash
+docker service update --force whatsdecrypt_whatsdecrypt
+```
+
+Ou reimplante o stack:
+
+```bash
+docker stack deploy -c docker-compose.yml whatsdecrypt
+```
 
 ## Licença
 

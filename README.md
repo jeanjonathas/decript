@@ -1,6 +1,6 @@
-# Microserviço de Descriptografia de Mídia do WhatsApp
+# WhatsDecrypt
 
-Este microserviço permite descriptografar arquivos de mídia criptografados do WhatsApp (formato `.enc`) sem depender de bibliotecas pesadas como `@adiwajshing/baileys`.
+Microserviço para descriptografar arquivos de mídia criptografados do WhatsApp (formato `.enc`) sem depender de bibliotecas pesadas como `@adiwajshing/baileys`.
 
 ## Funcionalidades
 

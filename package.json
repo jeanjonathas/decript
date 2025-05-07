@@ -1,5 +1,5 @@
 {
-  "name": "whatsapp-media-decryptor",
+  "name": "whatsdecrypt",
   "version": "1.0.0",
   "description": "Microserviço para descriptografar arquivos de mídia do WhatsApp",
   "main": "src/index.js",

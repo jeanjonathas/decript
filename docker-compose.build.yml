@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  whatsdecrypt:
+    build:
+      context: https://github.com/jeanjonathas/whatsdecrypt.git#main
+      dockerfile: Dockerfile
+    image: whatsdecrypt:latest
+    container_name: whatsdecrypt
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=development
+      - PORT=3000
+      - API_KEY=Je@nfree2525
+    volumes:
+      - ./:/app
+      - /app/node_modules

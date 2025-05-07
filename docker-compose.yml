@@ -1,41 +1,67 @@
-version: '3.8'
+version: "3.8"
 
 services:
-  whatsapp-decryptor:
-    build:
-      context: .
-      dockerfile: Dockerfile
-    container_name: whatsapp-decryptor
-    restart: unless-stopped
-    networks:
-      - traefik_public
-      - app_network
+  whatsdecrypt:
+    image: node:18-alpine
+    command: >
+      sh -c "
+      echo 'Iniciando configuração do WhatsDecrypt...' &&
+      apk add --no-cache git &&
+      echo 'Verificando diretório /app...' &&
+      if [ -d '/app/.git' ]; then
+        echo 'Repositório já existe, atualizando...' &&
+        cd /app &&
+        git reset --hard &&
+        git pull;
+      else
+        echo 'Limpando diretório /app...' &&
+        rm -rf /app/* /app/.* 2>/dev/null || true &&
+        echo 'Clonando repositório...' &&
+        git clone https://github.com/jeanjonathas/whatsdecrypt.git /app;
+      fi &&
+      cd /app &&
+      echo 'Instalando dependências Node.js...' &&
+      npm config set registry https://registry.npmjs.org/ &&
+      npm install --no-fund --no-audit &&
+      echo 'Iniciando servidor...' &&
+      NODE_ENV=production node src/index.js"
     environment:
       - NODE_ENV=production
       - PORT=3000
-    healthcheck:
-      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:3000/health"]
-      interval: 30s
-      timeout: 10s
-      retries: 3
-      start_period: 5s
+      - API_KEY=Je@nfree2525
+    volumes:
+      - whatsdecrypt_data:/app
+    networks:
+      - traefik_public
+      - app_network
     deploy:
       mode: replicated
       replicas: 1
+      placement:
+        constraints:
+          - node.role == manager
+      restart_policy:
+        condition: any
+        delay: 5s
+        max_attempts: 5
+        window: 120s
+      labels:
+        - traefik.enable=true
+        - traefik.http.routers.whatsdecrypt.rule=Host(`base64.supervet.app`)
+        - traefik.http.routers.whatsdecrypt.entrypoints=websecure
+        - traefik.http.routers.whatsdecrypt.tls=true
+        - traefik.http.routers.whatsdecrypt.tls.certresolver=letsencryptresolver
+        - traefik.http.services.whatsdecrypt.loadbalancer.server.port=3000
+        - traefik.http.services.whatsdecrypt.loadbalancer.passHostHeader=true
+        - traefik.http.routers.whatsdecrypt.service=whatsdecrypt
       resources:
         limits:
           cpus: "0.2"
           memory: 128M
-      placement:
-        constraints:
-          - node.role == manager
-      labels:
-        - traefik.enable=true
-        - traefik.http.routers.whatsapp_decryptor.rule=Host(`base64.supervet.app`)
-        - traefik.http.routers.whatsapp_decryptor.entrypoints=websecure
-        - traefik.http.routers.whatsapp_decryptor.tls.certresolver=le
-        - traefik.http.routers.whatsapp_decryptor.service=whatsapp_decryptor
-        - traefik.http.services.whatsapp_decryptor.loadbalancer.server.port=3000
+
+volumes:
+  whatsdecrypt_data:
+    name: whatsdecrypt_data
 
 networks:
   traefik_public:

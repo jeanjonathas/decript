@@ -12,7 +12,7 @@ const router = express.Router();
 // Inicializar o cache global para downloads se não existir
 global.downloadCache = global.downloadCache || {};
 
-// Função para limpar o cache periodicamente (a cada 30 minutos)
+// Função para limpar o cache periodicamente (a cada 6 horas)
 setInterval(() => {
   const now = Date.now();
   Object.keys(global.downloadCache).forEach(key => {
@@ -21,7 +21,7 @@ setInterval(() => {
     }
   });
   console.log(`Cache de downloads limpo. Itens restantes: ${Object.keys(global.downloadCache).length}`);
-}, 30 * 60 * 1000);
+}, 6 * 60 * 60 * 1000);
 
 // Função auxiliar para gerar um nome de arquivo temporário único
 const getTempFilePath = (extension = 'bin') => {
@@ -156,14 +156,14 @@ router.post('/decrypt-media', apiKeyAuth, async (req, res) => {
               decryptedData,
               mimeType,
               fileName,
-              expiresAt: Date.now() + (15 * 60 * 1000) // 15 minutos
+              expiresAt: Date.now() + (24 * 60 * 60 * 1000) // 24 horas
             };
             
             return downloadId;
           })(),
           downloadUrl: `https://${req.get('host')}/download/${ // Usar o mesmo ID gerado acima
             Object.keys(global.downloadCache).pop() // Pega o último ID adicionado ao cache
-          }`
+          }?apiKey=${process.env.API_KEY || req.headers['x-api-key'] || req.query.apiKey}`
         });
       }
 

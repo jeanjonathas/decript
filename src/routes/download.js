@@ -10,7 +10,7 @@ const router = express.Router();
  * Endpoint para download direto de arquivos de mídia do WhatsApp
  * GET /download/:id
  */
-router.get('/download/:id', apiKeyAuth, async (req, res) => {
+router.get('/download/:id', async (req, res) => {
   try {
     const { id } = req.params;
     

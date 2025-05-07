@@ -103,7 +103,7 @@ Todas as requisições precisam incluir uma API key válida. Você pode fornecer
 1. **Cabeçalho HTTP**: Incluir o cabeçalho `X-API-Key` com o valor da API key
 2. **Parâmetro de consulta**: Adicionar `?apiKey=sua_api_key` à URL
 
-API Key: `Je@nfree2525`
+API Key: `sua_api_key`
 
 ### Endpoints
 
@@ -180,7 +180,7 @@ A resposta inclui uma `downloadUrl` que permite baixar o arquivo descriptografad
 # Obter resposta em base64
 curl -X POST https://base64.supervet.app/decrypt-media \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: Je@nfree2525" \
+  -H "X-API-Key: sua_api_key" \
   -d '{
     "url": "https://mmg.whatsapp.net/path/to/audio.enc",
     "mediaKey": "sua_media_key_base64",
@@ -192,7 +192,7 @@ curl -X POST https://base64.supervet.app/decrypt-media \
 # Download direto do arquivo
 curl -X POST "https://base64.supervet.app/decrypt-media?download=true" \
   -H "Content-Type: application/json" \
-  -H "X-API-Key: Je@nfree2525" \
+  -H "X-API-Key: sua_api_key" \
   -d @dados.json \
   --output audio.ogg
 ```
@@ -215,7 +215,7 @@ async function decryptMedia() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-API-Key': 'Je@nfree2525'
+      'X-API-Key': 'sua_api_key'
     },
     body: JSON.stringify(data)
   });
@@ -237,7 +237,7 @@ async function decryptAndGetDownloadUrl() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-API-Key': 'Je@nfree2525'
+      'X-API-Key': 'sua_api_key'
     },
     body: JSON.stringify(data)
   });
@@ -260,7 +260,7 @@ async function downloadMedia() {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',
-      'X-API-Key': 'Je@nfree2525'
+      'X-API-Key': 'sua_api_key'
     },
     body: JSON.stringify(data)
   });
@@ -309,7 +309,7 @@ curl_setopt($ch, CURLOPT_POST, true);
 curl_setopt($ch, CURLOPT_POSTFIELDS, json_encode($data));
 curl_setopt($ch, CURLOPT_HTTPHEADER, [
   'Content-Type: application/json',
-  'X-API-Key: Je@nfree2525'
+  'X-API-Key: sua_api_key'
 ]);
 
 // Executar a requisição
@@ -373,7 +373,7 @@ services:
     environment:
       - NODE_ENV=production
       - PORT=3000
-      - API_KEY=Je@nfree2525
+      - API_KEY=sua_api_key
     volumes:
       - whatsdecrypt_data:/app
     networks:

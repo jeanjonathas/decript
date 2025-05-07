@@ -107,13 +107,9 @@ API Key: `Je@nfree2525`
 
 ### Endpoints
 
-#### POST /decrypt-media (Recomendado)
-
+#### POST /decrypt-media 
 Este endpoint recebe os parâmetros necessários para descriptografar qualquer tipo de mídia do WhatsApp (áudio, imagem, vídeo, documento).
 
-#### POST /decrypt-audio (Legado)
-
-Mantido por compatibilidade, redireciona para `/decrypt-media`.
 
 ### Corpo da Requisição (JSON):
 

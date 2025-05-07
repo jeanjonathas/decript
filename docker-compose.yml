@@ -17,14 +17,25 @@ services:
         echo 'Limpando diretório /app...' &&
         rm -rf /app/* /app/.* 2>/dev/null || true &&
         echo 'Clonando repositório...' &&
-        git clone https://github.com/jeanjonathas/whatsdecrypt.git /app;
+        git clone https://github.com/jeanjonathas/whatsdecrypt.git /tmp/whatsdecrypt &&
+        cp -r /tmp/whatsdecrypt/* /app/ &&
+        cp -r /tmp/whatsdecrypt/.* /app/ 2>/dev/null || true &&
+        rm -rf /tmp/whatsdecrypt;
       fi &&
       cd /app &&
+      echo 'Listando conteúdo do repositório:' &&
+      ls -la &&
       echo 'Instalando dependências Node.js...' &&
       npm config set registry https://registry.npmjs.org/ &&
       npm install --no-fund --no-audit &&
+      echo 'Verificando estrutura do diretório:' &&
+      ls -la &&
+      echo 'Conteúdo da pasta src:' &&
+      ls -la src/ || echo 'Pasta src não encontrada' &&
+      echo 'Conteúdo do package.json:' &&
+      cat package.json || echo 'Arquivo package.json não encontrado' &&
       echo 'Iniciando servidor...' &&
-      NODE_ENV=production node src/index.js"
+      NODE_ENV=production node src/index.js || echo 'Falha ao iniciar o servidor'"
     environment:
       - NODE_ENV=production
       - PORT=3000
@@ -50,7 +61,7 @@ services:
         - traefik.http.routers.whatsdecrypt.rule=Host(`base64.supervet.app`)
         - traefik.http.routers.whatsdecrypt.entrypoints=websecure
         - traefik.http.routers.whatsdecrypt.tls=true
-        - traefik.http.routers.whatsdecrypt.tls.certresolver=letsencryptresolver
+        - traefik.http.routers.whatsdecrypt.tls.certresolver=le
         - traefik.http.services.whatsdecrypt.loadbalancer.server.port=3000
         - traefik.http.services.whatsdecrypt.loadbalancer.passHostHeader=true
         - traefik.http.routers.whatsdecrypt.service=whatsdecrypt
